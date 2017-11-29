@@ -1,6 +1,8 @@
 # Import statements necessary
 from flask import Flask, render_template
 from flask_script import Manager
+import json
+import requests
 
 # Set up application
 app = Flask(__name__)
@@ -28,8 +30,17 @@ def basic_values_list(name):
         shortname = name
     return render_template('values.html',word_list=lst,long_name=longname,short_name=shortname)
 
-
 ## PART 1: Add another route /word/<new_word> as the instructions describe.
+
+@app.route('/word/<new_word>')
+def data_muse_func(new_word):
+    data_response = requests.get("https://api.datamuse.com/words?rel_rhy={}".format(new_word))
+    datatxt = data_response.text
+    data_results = json.loads(datatxt)
+
+    rhyme = str(data_results[0]['word'])
+    return "<p style='color:black; font-family:helvetica; text-align:center; margin-top:25px;'>Here is a word that rhymes with <strong>{}</strong>:</p> <p style='color:#16A085; font-family:helvetica; font-size:20px; font-weight:bold; text-align:center;'>{}</[]>".format(str(new_word),str(rhyme))
+
 
 
 ## PART 2: Edit the following route so that the photo_tags.html template will render
@@ -37,7 +48,7 @@ def basic_values_list(name):
 def photo_titles(tag, num):
     # HINT: Trying out the flickr accessing code in another file and seeing what data you get will help debug what you need to add and send to the template!
     # HINT 2: This is almost all the same kind of nested data investigation you've done before!
-    FLICKR_KEY = "" # TODO: fill in a flickr key
+    FLICKR_KEY = "38db11ee7cd8e604071311d773fe9ba4" # TODO: fill in a flickr key
     baseurl = 'https://api.flickr.com/services/rest/'
     params = {}
     params['api_key'] = FLICKR_KEY
@@ -49,9 +60,12 @@ def photo_titles(tag, num):
     response_obj = requests.get(baseurl, params=params)
     trimmed_text = response_obj.text[14:-1]
     flickr_data = json.loads(trimmed_text)
-    # TODO: Add some code here that processes flickr_data in some way to get what you nested
-    # TODO: Edit the invocation to render_template to send the data you need
-    return render_template('photo_tags.html')
+    num_photos = flickr_data['photos']['total']
+    title_list = []
+    for i in flickr_data['photos']['photo']:
+        title_list.append(i['title'])
+
+    return render_template('photo_info.html',photo_titles=title_list, num=num_photos)
 
 
 
